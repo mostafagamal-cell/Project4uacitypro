@@ -10,8 +10,11 @@ import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
 import android.view.*
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
+import androidx.fragment.app.Fragment
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
@@ -26,13 +29,17 @@ import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.base.NavigationCommand
 import com.udacity.project4.databinding.FragmentSelectLocationBinding
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
-import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
+
 import org.koin.android.ext.android.inject
+import java.util.*
 
-class SelectLocationFragment : BaseFragment() {
-
+class SelectLocationFragment : BaseFragment(),OnMapReadyCallback {
+    val REQUST_LOCATION=1
+     var marker: Marker? = null
     //Use Koin to get the view model of the SaveReminder
     override val _viewModel: SaveReminderViewModel by inject()
+    private lateinit var map: GoogleMap
+    private val TAG = SelectLocationFragment::class.java.simpleName
     private lateinit var binding: FragmentSelectLocationBinding
 
     override fun onCreateView(
@@ -46,32 +53,35 @@ class SelectLocationFragment : BaseFragment() {
 
         setHasOptionsMenu(true)
         setDisplayHomeAsUpEnabled(true)
-
-//        TODO: add the map setup implementation
-//        TODO: zoom to the user location after taking his permission
-//        TODO: add style to the map
-//        TODO: put a marker to location that the user selected
+        val mapFragment = childFragmentManager
+            .findFragmentById(R.id.mapFragment) as SupportMapFragment
+        mapFragment.getMapAsync(this)
 
 
-//        TODO: call this function after the user confirms on the selected location
-        onLocationSelected()
 
+        binding.saveButton.setOnClickListener {
+            Log.i(TAG,"clicked")
+            onLocationSelected()
+        }
         return binding.root
     }
 
     private fun onLocationSelected() {
-        //        TODO: When the user confirms on the selected location,
-        //         send back the selected location details to the view model
-        //         and navigate back to the previous fragment to save the reminder and add the geofence
+        Log.i(TAG,marker.toString())
+        if (marker!=null) {
+            _viewModel.reminderSelectedLocationStr.value = marker!!.title
+            _viewModel.latitude.value = marker!!.position.latitude
+            _viewModel.longitude.value = marker!!.position.longitude
+            _viewModel.navigationCommand.value = NavigationCommand.Back
+        }
     }
-
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.map_options, menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
-        // TODO: Change the map type based on the user's selection.
+
         R.id.normal_map -> {
             true
         }
@@ -87,5 +97,76 @@ class SelectLocationFragment : BaseFragment() {
         else -> super.onOptionsItemSelected(item)
     }
 
+    override fun onMapReady(p0: GoogleMap?) {
+        map=p0!!
+        setonlongclilk(map)
+        setpoi(map)
+        setMapStyle(map)
+        enable(map)
+
+    }
+    fun setpoi(map: GoogleMap) {
+        map.setOnPoiClickListener { poi ->
+            map.clear()
+            marker = map.addMarker(MarkerOptions().position(poi.latLng).title(poi.name))
+            Log.i(TAG,marker.toString())
+            marker?.showInfoWindow()
+            map.moveCamera(CameraUpdateFactory.newLatLng(poi.latLng))
+        }
+    }
+
+    fun grainted():Boolean=ContextCompat.checkSelfPermission(requireContext(),android.Manifest.permission.ACCESS_FINE_LOCATION)== PackageManager.PERMISSION_GRANTED
+    fun enable(map: GoogleMap)
+    {
+        if (grainted())
+        {
+            map.setMyLocationEnabled(true)
+        }else
+        {
+            ActivityCompat.requestPermissions(requireActivity(),
+                arrayOf<String>(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                REQUST_LOCATION
+            )
+        }
+    }
+
+    private fun setMapStyle(map: GoogleMap) {
+        try {
+
+            val success = map.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(
+                    requireContext(),
+                    R.raw.map_style
+                )
+            )
+
+            if (!success) {
+                Log.e(TAG, "Style parsing failed.")
+            }
+        } catch (e: Resources.NotFoundException) {
+            Log.e(TAG, "Can't find style. Error: ", e)
+        }
+    }
+    fun setonlongclilk(map: GoogleMap) {
+
+        map.setOnMapLongClickListener { latLong ->
+            val snap = String.format(
+                Locale.getDefault(),
+                "Lat: %1$.5f,Long %2$.5f",
+                latLong.latitude,
+                latLong.longitude
+            )
+          marker=map.addMarker(MarkerOptions().position(latLong).title("drop here").snippet(snap).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)))
+        }
+    }
 
 }
+
+fun Fragment.setDisplayHomeAsUpEnabled(bool: Boolean) {
+    if (activity is AppCompatActivity) {
+        (activity as AppCompatActivity).supportActionBar?.setDisplayHomeAsUpEnabled(
+            bool
+        )
+    }
+}
+
