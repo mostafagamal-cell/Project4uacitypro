@@ -2,6 +2,7 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.content.IntentSender
@@ -10,15 +11,13 @@ import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
 import android.view.*
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.common.api.ResolvableApiException
-import com.google.android.gms.location.*
+
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -77,6 +76,7 @@ class SelectLocationFragment : BaseFragment(),OnMapReadyCallback {
         }
     }
 
+
     private fun showalert() {
         if (
          notgrainted()
@@ -84,12 +84,7 @@ class SelectLocationFragment : BaseFragment(),OnMapReadyCallback {
            Snackbar.make(requireView(),R.string.permission_denied_explanation,Snackbar.LENGTH_INDEFINITE).setAction("ok")
            {
               val permissionsArray = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-                      ActivityCompat.requestPermissions(
-                            requireActivity(),
-                         permissionsArray,
-                            REQUST_LOCATION
-
-                       )
+               requestPermissions(permissionsArray,REQUST_LOCATION)
 
            }.show()
 
@@ -118,8 +113,8 @@ class SelectLocationFragment : BaseFragment(),OnMapReadyCallback {
             PackageManager.PERMISSION_GRANTED &&
             ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
-    fun notgrainted():Boolean=ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) ==
-            PackageManager.PERMISSION_DENIED
+    fun notgrainted():Boolean=  ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION)
+
     fun enable(map: GoogleMap)
     {
         if (grainted())
@@ -185,10 +180,9 @@ class SelectLocationFragment : BaseFragment(),OnMapReadyCallback {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (grantResults.isNotEmpty() && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-            showalert()
-        } else {
-            showalert()
+          return
         }
+        showalert()
     }
 
 }

@@ -193,6 +193,7 @@ class RemindersActivityTest :
         onView(withId(R.id.save_button)).perform(click())
         onView(withId(R.id.saveReminder)).perform(click())
         //test toast
+
         onView(withText(R.string.reminder_saved)).inRoot(withDecorView(not(`is`(getActivity(activityScenario).window.decorView))))
             .check(matches(isDisplayed()))
         activityScenario.close()

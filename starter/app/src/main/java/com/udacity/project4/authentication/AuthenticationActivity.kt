@@ -30,15 +30,14 @@ class AuthenticationActivity : AppCompatActivity() {
         setContentView(binding.root)
         Log.i("here ffaa","AuthenticationActivity")
         val sharedPreference =  getSharedPreferences("PREFERENCE_NAME", Context.MODE_PRIVATE)
-        var editor = sharedPreference.edit()
+
+        if(sharedPreference.getBoolean("this",false))
+        {
+            val intent = Intent(this, RemindersActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
         binding.authButton.setOnClickListener({
-            if(sharedPreference.getBoolean("this",false))
-            {
-                val intent = Intent(this, RemindersActivity::class.java)
-                startActivity(intent)
-                finish()
-                return@setOnClickListener
-            }
             launchSignInFlow()
         })
     }

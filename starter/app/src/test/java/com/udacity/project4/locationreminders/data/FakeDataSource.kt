@@ -6,7 +6,7 @@ import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import kotlinx.coroutines.withContext
 
 //Use FakeDataSource that acts as a test double to the LocalDataSource
-class FakeDataSource(var datasource: MutableList<ReminderDTO>? = mutableListOf()) : ReminderDataSource {
+class FakeDataSource(var datasource: MutableList<ReminderDTO> = mutableListOf()) : ReminderDataSource {
 
     private var shouldReturnError = false
 
@@ -15,32 +15,36 @@ class FakeDataSource(var datasource: MutableList<ReminderDTO>? = mutableListOf()
         shouldReturnError = value
     }
     override suspend fun getReminders(): Result<List<ReminderDTO>>{
-        if (shouldReturnError)        return Result.Error("shouldReturnError")
-        datasource?.let { return Result.Success(it) }
-        return Result.Error("Reminders not found")
+        if (shouldReturnError)
+            return Result.Error("shouldReturnError")
+        datasource.let { return Result.Success(it) }
+
     }
 
     override suspend fun saveReminder(reminder: ReminderDTO) {
-        datasource?.add(reminder)
+        datasource.add(reminder)
     }
 
     override suspend fun getReminder(id: String): Result<ReminderDTO> {
+        if (shouldReturnError)
+            return  Result.Error("Reminder not found!")
         try {
-            val reminder = datasource?.find {
-                it.id==id
+            val data = datasource.find { i ->
+                i.id == id
             }
-            if (reminder != null) {
-                return Result.Success(reminder)
-            } else {
-                return Result.Error("Reminder not found!")
+            if (data != null) {
+                if (id==data.id)    Result.Success(data)
             }
-        } catch (e: Exception) {
-            return Result.Error(e.localizedMessage)
+        }catch (ex:Exception)
+        {
+          return  Result.Error(ex.message)
         }
+        return    Result.Error("Reminder not found!")
+
     }
 
     override suspend fun deleteAllReminders() {
-        datasource?.clear()
+        datasource.clear()
     }
 
 
