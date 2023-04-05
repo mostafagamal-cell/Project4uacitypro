@@ -10,6 +10,7 @@ import android.content.res.Resources
 import android.os.Bundle
 import android.util.Log
 import android.view.*
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -34,7 +35,7 @@ import org.koin.android.ext.android.inject
 import java.util.*
 
 class SelectLocationFragment : BaseFragment(),OnMapReadyCallback {
-    val REQUST_LOCATION=1
+      val REQUST_LOCATION=1
      var marker: Marker? = null
     //Use Koin to get the view model of the SaveReminder
     override val _viewModel: SaveReminderViewModel by inject()
@@ -76,25 +77,23 @@ class SelectLocationFragment : BaseFragment(),OnMapReadyCallback {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.map_options, menu)
-    }
+    private fun showalert() {
+        if (
+         notgrainted()
+        ) {
+           Snackbar.make(requireView(),R.string.permission_denied_explanation,Snackbar.LENGTH_INDEFINITE).setAction("ok")
+           {
+              val permissionsArray = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+                      ActivityCompat.requestPermissions(
+                            requireActivity(),
+                         permissionsArray,
+                            REQUST_LOCATION
 
-    override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
+                       )
 
-        R.id.normal_map -> {
-            true
+           }.show()
+
         }
-        R.id.hybrid_map -> {
-            true
-        }
-        R.id.satellite_map -> {
-            true
-        }
-        R.id.terrain_map -> {
-            true
-        }
-        else -> super.onOptionsItemSelected(item)
     }
 
     override fun onMapReady(p0: GoogleMap?) {
@@ -115,7 +114,12 @@ class SelectLocationFragment : BaseFragment(),OnMapReadyCallback {
         }
     }
 
-    fun grainted():Boolean=ContextCompat.checkSelfPermission(requireContext(),android.Manifest.permission.ACCESS_FINE_LOCATION)== PackageManager.PERMISSION_GRANTED
+    fun grainted():Boolean=ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+    fun notgrainted():Boolean=ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_DENIED
     fun enable(map: GoogleMap)
     {
         if (grainted())
@@ -123,13 +127,31 @@ class SelectLocationFragment : BaseFragment(),OnMapReadyCallback {
             map.setMyLocationEnabled(true)
         }else
         {
-            ActivityCompat.requestPermissions(requireActivity(),
-                arrayOf<String>(android.Manifest.permission.ACCESS_FINE_LOCATION),
-                REQUST_LOCATION
-            )
+          showalert()
         }
     }
-
+    override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
+        R.id.normal_map -> {
+            map.mapType = GoogleMap.MAP_TYPE_NORMAL
+            true
+        }
+        R.id.hybrid_map -> {
+            map.mapType = GoogleMap.MAP_TYPE_HYBRID
+            true
+        }
+        R.id.satellite_map -> {
+            map.mapType = GoogleMap.MAP_TYPE_SATELLITE
+            true
+        }
+        R.id.terrain_map -> {
+            map.mapType = GoogleMap.MAP_TYPE_TERRAIN
+            true
+        }
+        else -> super.onOptionsItemSelected(item)
+    }
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.map_options, menu)
+    }
     private fun setMapStyle(map: GoogleMap) {
         try {
 
@@ -157,6 +179,15 @@ class SelectLocationFragment : BaseFragment(),OnMapReadyCallback {
                 latLong.longitude
             )
           marker=map.addMarker(MarkerOptions().position(latLong).title("drop here").snippet(snap).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)))
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (grantResults.isNotEmpty() && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+            showalert()
+        } else {
+            showalert()
         }
     }
 

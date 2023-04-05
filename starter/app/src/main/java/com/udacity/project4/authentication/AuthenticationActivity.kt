@@ -1,19 +1,19 @@
 package com.udacity.project4.authentication
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.firebase.auth.FirebaseAuth
-import com.udacity.project4.R
 import com.udacity.project4.databinding.ActivityAuthenticationBinding
 import com.udacity.project4.locationreminders.RemindersActivity
-import com.udacity.project4.locationreminders.reminderslist.ReminderListFragment
-import kotlinx.android.synthetic.main.activity_authentication.*
+
 
 /**
  * This class should be the starting point of the app, It asks the users to sign in / register, and redirects the
@@ -21,6 +21,7 @@ import kotlinx.android.synthetic.main.activity_authentication.*
  */
 
 class AuthenticationActivity : AppCompatActivity() {
+
     lateinit var binding: ActivityAuthenticationBinding
     val SIGN_IN_REQUEST_CODE = 1
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,7 +29,18 @@ class AuthenticationActivity : AppCompatActivity() {
         binding = ActivityAuthenticationBinding.inflate(getLayoutInflater())
         setContentView(binding.root)
         Log.i("here ffaa","AuthenticationActivity")
-        binding.authButton.setOnClickListener({ launchSignInFlow() })
+        val sharedPreference =  getSharedPreferences("PREFERENCE_NAME", Context.MODE_PRIVATE)
+        var editor = sharedPreference.edit()
+        binding.authButton.setOnClickListener({
+            if(sharedPreference.getBoolean("this",false))
+            {
+                val intent = Intent(this, RemindersActivity::class.java)
+                startActivity(intent)
+                finish()
+                return@setOnClickListener
+            }
+            launchSignInFlow()
+        })
     }
 
     fun launchSignInFlow() {
@@ -54,6 +66,10 @@ class AuthenticationActivity : AppCompatActivity() {
                     "ok passed",
                     "Successfully signed in user ${FirebaseAuth.getInstance().currentUser?.displayName}!"
                 )
+                val sharedPreference =  getSharedPreferences("PREFERENCE_NAME", Context.MODE_PRIVATE)
+                var editor = sharedPreference.edit()
+                editor.putBoolean("this",true)
+                editor.apply()
                 val intent = Intent(this, RemindersActivity::class.java)
                 startActivity(intent)
                 finish()

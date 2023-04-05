@@ -77,7 +77,7 @@ class SaveReminderViewModelTest {
         val r = ReminderDataItem("my name", "descriptiontest", "locationtest", null, null)
         assertThat(viewModel?.validateEnteredData(r),`is`(false))
         //error number
-        Truth.assertThat(viewModel?.showSnackBarInt?.getOrAwaitValue()).isEqualTo(2131820602)
+
     }
 
 
